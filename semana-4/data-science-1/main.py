@@ -14,7 +14,7 @@
 
 # ## _Setup_ geral
 
-# In[2]:
+# In[1]:
 
 
 import pandas as pd
@@ -25,7 +25,7 @@ import seaborn as sns
 from statsmodels.distributions.empirical_distribution import ECDF
 
 
-# In[3]:
+# In[2]:
 
 
 # %matplotlib inline
@@ -42,7 +42,7 @@ sns.set()
 
 # ### _Setup_ da parte 1
 
-# In[4]:
+# In[3]:
 
 
 np.random.seed(42)
@@ -53,20 +53,14 @@ dataframe = pd.DataFrame({"normal": sct.norm.rvs(20, 4, size=10000),
 
 # ## Inicie sua análise a partir da parte 1 a partir daqui
 
-# In[5]:
+# In[4]:
 
 
 # Sua análise da parte 1 começa aqui.
 dataframe.describe().round(3)
 
 
-# In[57]:
-
-
-
-
-
-# In[8]:
+# In[30]:
 
 
 
@@ -78,7 +72,7 @@ dataframe.describe().round(3)
 # 
 # Em outra palavras, sejam `q1_norm`, `q2_norm` e `q3_norm` os quantis da variável `normal` e `q1_binom`, `q2_binom` e `q3_binom` os quantis da variável `binom`, qual a diferença `(q1_norm - q1 binom, q2_norm - q2_binom, q3_norm - q3_binom)`?
 
-# In[21]:
+# In[5]:
 
 
 def q1():
@@ -98,7 +92,7 @@ def q1():
 # 
 # Considere o intervalo $[\bar{x} - s, \bar{x} + s]$, onde $\bar{x}$ é a média amostral e $s$ é o desvio padrão. Qual a probabilidade nesse intervalo, calculada pela função de distribuição acumulada empírica (CDF empírica) da variável `normal`? Responda como uma único escalar arredondado para três casas decimais.
 
-# In[6]:
+# In[7]:
 
 
 def q2():
@@ -106,22 +100,18 @@ def q2():
     mean = dataframe['normal'].mean()
     std = dataframe['normal'].std()
     interval = [mean - std, mean + std]
-    
+
     # probability calc
     ecdf = ECDF(dataframe['normal'])
-    prob = [round(ecdf(interval)[0], 3), round(ecdf(interval)[0], 3)]
-    return float(prob[0])
+    prob = round(ecdf(mean+std) - ecdf(mean-std), 3)
+    
+    return prob
 
 
 # Para refletir:
 # 
 # * Esse valor se aproxima do esperado teórico?
 # * Experimente também para os intervalos $[\bar{x} - 2s, \bar{x} + 2s]$ e $[\bar{x} - 3s, \bar{x} + 3s]$.
-
-# O valor se aproxima do esperado teoricamente, pois:
-# 
-# * o valor da probabilidade obtido é a área abaixo da curva no intervalo analisado
-# * a distiruição normal é simétrica (e os intevalos analisados tem o mesmo tamanho), logo a área abaixo da curva em ambos intervalos é igual
 
 # ## Questão 3
 # 
@@ -134,12 +124,13 @@ def q2():
 
 def q3():
     n_mean = dataframe['normal'].mean()
-    n_std = dataframe['normal'].std()
+    n_var = dataframe['normal'].var()
 
     b_mean = dataframe['binomial'].mean()
-    b_std = dataframe['binomial'].std()
+    b_var = dataframe['binomial'].var()
 
-    diff = [round(b_mean - n_mean, 3), round(b_std - n_std, 3)]
+    diff = [round(b_mean - n_mean, 3), round(b_var - n_var, 3)]
+
     return tuple(diff)
 
 
@@ -169,10 +160,18 @@ stars.loc[:, "target"] = stars.target.astype(bool)
 
 # ## Inicie sua análise da parte 2 a partir daqui
 
-# In[9]:
+# In[41]:
 
 
 # Sua análise da parte 2 começa aqui.
+stars.describe()
+
+
+# In[23]:
+
+
+false_pulsar = stars.query('target == 0')['mean_profile']
+false_pulsar_mean_profile_standardized = (false_pulsar - false_pulsar.mean()) / false_pulsar.std()
 
 
 # ## Questão 4
@@ -192,8 +191,12 @@ stars.loc[:, "target"] = stars.target.astype(bool)
 
 
 def q4():
-    # Retorne aqui o resultado da questão 4.
-    pass
+    t_quantiles = sct.norm.ppf([0.8, 0.9, 0.95], loc=0, scale=1)
+
+    ecdf = ECDF(false_pulsar_mean_profile_standardized)
+    prob = [round(ecdf(t_quantiles[0]), 3), round(ecdf(t_quantiles[1]), 3), round(ecdf(t_quantiles[2]), 3)]
+
+    return tuple(prob)
 
 
 # Para refletir:
@@ -209,8 +212,14 @@ def q4():
 
 
 def q5():
-    # Retorne aqui o resultado da questão 5.
-    pass
+    t_quantiles = sct.norm.ppf([0.25, 0.5, 0.75], loc=0, scale=1)
+
+    quant = false_pulsar_mean_profile_standardized.quantile([0.25, 0.5, 0.75])
+
+    diff = (quant - t_quantiles).to_list()
+    diff = tuple([round(diff[0],3), round(diff[1],3), round(diff[2], 3)])
+
+    return diff
 
 
 # Para refletir:
